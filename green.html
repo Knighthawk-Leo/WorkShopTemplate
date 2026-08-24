@@ -1,32 +1,362 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark" data-theme-pref="system">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vanilar Agent</title>
+    <meta name="color-scheme" content="light dark">
+    <title>The Pensieve · Hogwarts Bureau of Magical Data</title>
+
+    <!-- Resolve the theme BEFORE first paint so there is no flash of the wrong parchment -->
+    <script>
+        (function () {
+            var STORAGE_KEY = 'pensieve-theme';
+            var pref = 'system';
+            try {
+                var saved = localStorage.getItem(STORAGE_KEY);
+                if (saved === 'light' || saved === 'dark' || saved === 'system') pref = saved;
+            } catch (e) { /* private mode / storage blocked — fall back to system */ }
+
+            var resolved = pref;
+            if (pref === 'system') {
+                resolved = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            }
+
+            var root = document.documentElement;
+            root.setAttribute('data-theme-pref', pref);
+            root.setAttribute('data-theme', resolved);
+            root.style.colorScheme = resolved;
+        })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
     <style>
+        /* =====================================================================
+           HOUSE COLOURS — constant across every theme (they are heraldry)
+           ===================================================================== */
+        :root {
+            --gryffindor:     #ae0001;
+            --gryffindor-dk:  #740001;
+            --slytherin:      #1a472a;
+            --slytherin-lt:   #2a623d;
+            --ravenclaw:      #222f5b;
+            --hufflepuff:     #d3a625;
+            --bronze:         #946b2d;
+        }
+
+        /* =====================================================================
+           THEME: DARK — "The Great Hall at midnight" (default)
+           ===================================================================== */
+        :root,
+        :root[data-theme="dark"] {
+            color-scheme: dark;
+
+            /* Canvas */
+            --bg-1:            #0b1020;
+            --bg-2:            #060913;
+            --glow-warm:       rgba(211, 166, 37, 0.10);
+            --glow-cool:       rgba(34, 47, 91, 0.45);
+
+            /* Type */
+            --text:            #f2e2c4;
+            --text-dim:        #cbb894;
+            --text-muted:      rgba(203, 184, 148, 0.6);
+
+            /* Accent (gold) */
+            --accent:          #d3a625;
+            --accent-bright:   #f0c75e;
+            --accent-deep:     #946b2d;
+            --accent-faint:    rgba(211, 166, 37, 0.28);
+            --accent-wash:     rgba(211, 166, 37, 0.10);
+            --accent-wash-lo:  rgba(211, 166, 37, 0.05);
+            --accent-halo:     rgba(211, 166, 37, 0.55);
+
+            /* Surfaces */
+            --surface:         rgba(6, 9, 19, 0.55);
+            --surface-sunk:    rgba(0, 0, 0, 0.45);
+            --surface-sunk-hi: rgba(0, 0, 0, 0.60);
+            --surface-raised:  rgba(242, 226, 196, 0.07);
+            --border:          var(--accent-faint);
+
+            /* Depth */
+            --shadow-md:       0 4px 22px rgba(0, 0, 0, 0.45);
+            --shadow-lg:       0 6px 26px rgba(0, 0, 0, 0.60);
+
+            /* Header */
+            --header-wash:     linear-gradient(180deg, rgba(211,166,37,0.07), transparent);
+            --title-grad:      linear-gradient(180deg, #f6dd9a 0%, #d3a625 55%, #9a7415 100%);
+            --title-shadow:    drop-shadow(0 2px 6px rgba(0, 0, 0, 0.7));
+            --crest-shadow:    0 0 14px rgba(211, 166, 37, 0.55);
+            --heading-shadow:  0 0 12px rgba(211, 166, 37, 0.35);
+
+            /* Messages */
+            --user-bg:         linear-gradient(135deg, rgba(34,47,91,0.55), rgba(11,16,32,0.35));
+            --user-border:     rgba(148, 107, 45, 0.55);
+            --user-text:       #eae3d2;
+            --user-inner:      inset 0 0 24px rgba(34, 47, 91, 0.35);
+
+            --assistant-bg:    linear-gradient(135deg, rgba(242,226,196,0.055), rgba(211,166,37,0.03)), rgba(6, 9, 19, 0.55);
+            --assistant-inner: inset 0 0 26px rgba(211, 166, 37, 0.06);
+
+            --error-bg:        linear-gradient(135deg, rgba(174,0,1,0.22), rgba(6,9,19,0.5));
+            --error-border:    rgba(174, 0, 1, 0.6);
+            --error-text:      #f0c0bd;
+            --error-inner:     inset 0 0 26px rgba(174, 0, 1, 0.12);
+
+            /* Code */
+            --code-bg:         rgba(0, 0, 0, 0.45);
+            --code-text:       #e8d9b5;
+            --code-inline:     #f0dcae;
+
+            /* Buttons */
+            --btn-bg:          linear-gradient(180deg, rgba(211,166,37,0.14), rgba(211,166,37,0.03));
+            --btn-text:        #f0c75e;
+            --btn-hover-bg:    linear-gradient(180deg, #f0c75e, #d3a625);
+            --btn-hover-text:  #060913;
+            --btn-hover-glow:  0 0 22px rgba(240, 199, 94, 0.55);
+            --btn-off-bg:      rgba(90, 78, 50, 0.18);
+            --btn-off-border:  rgba(211, 166, 37, 0.25);
+            --btn-off-text:    rgba(211, 166, 37, 0.4);
+
+            /* Chrome */
+            --scroll-track:    rgba(0, 0, 0, 0.4);
+            --selection-bg:    rgba(211, 166, 37, 0.35);
+            --selection-text:  #ffffff;
+
+            /* Ambience */
+            --starfield-op:    0.55;
+            --star-a:          #ffffff;
+            --star-b:          #ffe9b0;
+            --candle-visible:  block;
+            --sunbeam-op:      0;
+        }
+
+        /* =====================================================================
+           THEME: LIGHT — "The Great Hall at midday" (sunlit parchment)
+           ===================================================================== */
+        :root[data-theme="light"] {
+            color-scheme: light;
+
+            /* Canvas */
+            --bg-1:            #f7efdc;
+            --bg-2:            #e8dcc0;
+            --glow-warm:       rgba(211, 166, 37, 0.30);
+            --glow-cool:       rgba(34, 47, 91, 0.12);
+
+            /* Type */
+            --text:            #2b2317;
+            --text-dim:        #6b5b3f;
+            --text-muted:      rgba(107, 91, 63, 0.72);
+
+            /* Accent (gold, darkened so it actually reads on parchment) */
+            --accent:          #8a6510;
+            --accent-bright:   #6f5008;
+            --accent-deep:     #7a5a22;
+            --accent-faint:    rgba(138, 101, 16, 0.34);
+            --accent-wash:     rgba(138, 101, 16, 0.10);
+            --accent-wash-lo:  rgba(138, 101, 16, 0.05);
+            --accent-halo:     rgba(138, 101, 16, 0.35);
+
+            /* Surfaces */
+            --surface:         rgba(255, 252, 243, 0.78);
+            --surface-sunk:    rgba(43, 35, 23, 0.06);
+            --surface-sunk-hi: rgba(43, 35, 23, 0.10);
+            --surface-raised:  rgba(255, 253, 246, 0.72);
+            --border:          var(--accent-faint);
+
+            /* Depth */
+            --shadow-md:       0 4px 18px rgba(94, 72, 28, 0.14);
+            --shadow-lg:       0 6px 24px rgba(94, 72, 28, 0.18);
+
+            /* Header */
+            --header-wash:     linear-gradient(180deg, rgba(211,166,37,0.20), transparent);
+            --title-grad:      linear-gradient(180deg, #a97f18 0%, #7d5c0d 55%, #4f3a06 100%);
+            --title-shadow:    drop-shadow(0 1px 1px rgba(255, 255, 255, 0.85));
+            --crest-shadow:    0 1px 0 rgba(255, 255, 255, 0.8);
+            --heading-shadow:  0 1px 0 rgba(255, 255, 255, 0.7);
+
+            /* Messages */
+            --user-bg:         linear-gradient(135deg, rgba(34,47,91,0.14), rgba(255,255,255,0.70));
+            --user-border:     rgba(122, 90, 34, 0.45);
+            --user-text:       #23201a;
+            --user-inner:      inset 0 0 24px rgba(34, 47, 91, 0.06);
+
+            --assistant-bg:    linear-gradient(135deg, rgba(255,255,255,0.75), rgba(211,166,37,0.10)), rgba(255, 252, 243, 0.85);
+            --assistant-inner: inset 0 0 26px rgba(211, 166, 37, 0.08);
+
+            --error-bg:        linear-gradient(135deg, rgba(174,0,1,0.12), rgba(255,250,248,0.85));
+            --error-border:    rgba(174, 0, 1, 0.45);
+            --error-text:      #8a1210;
+            --error-inner:     inset 0 0 26px rgba(174, 0, 1, 0.06);
+
+            /* Code */
+            --code-bg:         rgba(43, 35, 23, 0.07);
+            --code-text:       #3a2f1c;
+            --code-inline:     #6b4c0a;
+
+            /* Buttons */
+            --btn-bg:          linear-gradient(180deg, rgba(211,166,37,0.26), rgba(211,166,37,0.10));
+            --btn-text:        #6f5008;
+            --btn-hover-bg:    linear-gradient(180deg, #d3a625, #a97f18);
+            --btn-hover-text:  #fffaee;
+            --btn-hover-glow:  0 2px 14px rgba(138, 101, 16, 0.40);
+            --btn-off-bg:      rgba(138, 101, 16, 0.08);
+            --btn-off-border:  rgba(138, 101, 16, 0.22);
+            --btn-off-text:    rgba(107, 91, 63, 0.55);
+
+            /* Chrome */
+            --scroll-track:    rgba(138, 101, 16, 0.10);
+            --selection-bg:    rgba(211, 166, 37, 0.40);
+            --selection-text:  #2b2317;
+
+            /* Ambience — stars sleep, sunbeams wake */
+            --starfield-op:    0;
+            --star-a:          transparent;
+            --star-b:          transparent;
+            --candle-visible:  none;
+            --sunbeam-op:      1;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        html, body { height: 100%; }
+
         body {
-            font-family: 'Courier New', monospace;
-            background: #000;
-            color: #00ff00;
+            font-family: 'EB Garamond', 'Garamond', Georgia, serif;
+            background:
+                radial-gradient(ellipse at 20% -10%, var(--glow-warm), transparent 55%),
+                radial-gradient(ellipse at 85% 110%, var(--glow-cool), transparent 60%),
+                linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+            background-attachment: fixed;
+            color: var(--text);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 0;
             margin: 0;
+            overflow: hidden;
+            transition: background-color 0.45s ease, color 0.45s ease;
         }
 
+        /* ---------- Enchanted night sky (dark) ---------- */
+        .starfield {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background-image:
+                radial-gradient(1.4px 1.4px at 12% 18%, var(--star-a), transparent),
+                radial-gradient(1.2px 1.2px at 32% 62%, var(--star-b), transparent),
+                radial-gradient(1.6px 1.6px at 55% 12%, var(--star-a), transparent),
+                radial-gradient(1.1px 1.1px at 71% 44%, var(--star-b), transparent),
+                radial-gradient(1.5px 1.5px at 88% 22%, var(--star-a), transparent),
+                radial-gradient(1.2px 1.2px at 8%  76%, var(--star-a), transparent),
+                radial-gradient(1.3px 1.3px at 44% 88%, var(--star-b), transparent),
+                radial-gradient(1.1px 1.1px at 64% 72%, var(--star-a), transparent),
+                radial-gradient(1.4px 1.4px at 93% 66%, var(--star-b), transparent),
+                radial-gradient(1.2px 1.2px at 24% 36%, var(--star-a), transparent);
+            opacity: var(--starfield-op);
+            animation: twinkle 6s ease-in-out infinite alternate;
+            transition: opacity 0.6s ease;
+        }
+
+        :root[data-theme="light"] .starfield { animation: none; }
+
+        @keyframes twinkle {
+            from { opacity: 0.30; }
+            to   { opacity: 0.75; }
+        }
+
+        /* ---------- Enchanted ceiling by day (light) ---------- */
+        .sunbeams {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            opacity: var(--sunbeam-op);
+            transition: opacity 0.6s ease;
+            background:
+                linear-gradient(103deg, transparent 18%, rgba(255, 244, 214, 0.75) 22%, transparent 27%),
+                linear-gradient(103deg, transparent 40%, rgba(255, 240, 200, 0.55) 44%, transparent 50%),
+                linear-gradient(103deg, transparent 62%, rgba(255, 246, 222, 0.65) 67%, transparent 72%);
+            filter: blur(6px);
+            animation: drift 14s ease-in-out infinite alternate;
+        }
+
+        @keyframes drift {
+            from { transform: translateX(-2%); opacity: calc(var(--sunbeam-op) * 0.75); }
+            to   { transform: translateX(2%);  opacity: var(--sunbeam-op); }
+        }
+
+        /* ---------- Floating candles of the Great Hall ---------- */
+        .candles {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            display: var(--candle-visible);
+        }
+
+        .candle {
+            position: absolute;
+            width: 6px;
+            height: 26px;
+            background: linear-gradient(180deg, #f7ecd2 0%, #e6d3aa 60%, #bfa87c 100%);
+            border-radius: 2px;
+            box-shadow: 0 0 18px rgba(240, 199, 94, 0.25);
+            animation: float 9s ease-in-out infinite;
+        }
+
+        .candle::before { /* flame */
+            content: '';
+            position: absolute;
+            top: -11px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 12px;
+            border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
+            background: radial-gradient(circle at 50% 70%, #fff6d8 0%, #ffcf6b 45%, #ff9b2f 75%, rgba(255,120,20,0) 100%);
+            filter: blur(0.4px);
+            animation: flicker 2.2s ease-in-out infinite;
+        }
+
+        .candle::after { /* halo */
+            content: '';
+            position: absolute;
+            top: -34px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,199,94,0.20) 0%, rgba(255,199,94,0) 70%);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0)     rotate(-0.6deg); }
+            50%      { transform: translateY(-22px) rotate(0.6deg); }
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1;    transform: translateX(-50%) scaleY(1); }
+            35%      { opacity: 0.75; transform: translateX(-50%) scaleY(0.86); }
+            60%      { opacity: 0.95; transform: translateX(-50%) scaleY(1.08); }
+        }
+
+        /* ---------- Shell ---------- */
         .container {
+            position: relative;
+            z-index: 1;
             width: 100vw;
             height: 100vh;
-            background: #000;
+            background: transparent;
             border: none;
             overflow: hidden;
         }
@@ -37,92 +367,285 @@
             height: 100vh;
         }
 
+        /* ---------- Header / crest ---------- */
+        .hall-header {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 18px 30px 14px;
+            text-align: center;
+            border-bottom: 1px solid var(--accent-faint);
+            background: var(--header-wash);
+            position: relative;
+        }
+
+        .hall-header::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: -1px;
+            transform: translateX(-50%);
+            width: 220px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            box-shadow: 0 0 12px var(--accent-halo);
+        }
+
+        .crest {
+            font-size: 1.5rem;
+            letter-spacing: 0.5em;
+            color: var(--accent);
+            text-shadow: var(--crest-shadow);
+            margin-bottom: 4px;
+        }
+
+        .hall-title {
+            font-family: 'Cinzel Decorative', 'Cinzel', serif;
+            font-weight: 900;
+            font-size: 1.7rem;
+            letter-spacing: 0.10em;
+            background: var(--title-grad);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: var(--title-shadow);
+        }
+
+        .hall-motto {
+            font-family: 'IM Fell English', serif;
+            font-style: italic;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            letter-spacing: 0.06em;
+            margin-top: 3px;
+        }
+
+        .house-ribbon {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .house-ribbon span {
+            width: 46px;
+            height: 3px;
+            border-radius: 2px;
+            opacity: 0.85;
+        }
+        .house-ribbon .g { background: var(--gryffindor); }
+        .house-ribbon .s { background: var(--slytherin-lt); }
+        .house-ribbon .r { background: var(--ravenclaw); }
+        .house-ribbon .h { background: var(--hufflepuff); }
+
+        /* =====================================================================
+           THE LUMOS DIAL — three-way theme switch (Light / Dark / System)
+           ===================================================================== */
+        .theme-switch {
+            position: absolute;
+            top: 16px;
+            right: 22px;
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            padding: 3px;
+            border: 1px solid var(--accent-faint);
+            border-radius: 999px;
+            background: var(--surface-sunk);
+            backdrop-filter: blur(3px);
+            box-shadow: inset 0 0 12px var(--accent-wash-lo);
+        }
+
+        .theme-switch__option {
+            appearance: none;
+            -webkit-appearance: none;
+            border: 0;
+            background: transparent;
+            color: var(--text-dim);
+            font-family: 'Cinzel', serif;
+            font-size: 0.62rem;
+            letter-spacing: 0.10em;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 11px;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .theme-switch__option .rune {
+            font-size: 0.85rem;
+            line-height: 1;
+            transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .theme-switch__option:hover {
+            color: var(--accent-bright);
+            background: var(--accent-wash);
+        }
+
+        .theme-switch__option:hover .rune { transform: rotate(-12deg) scale(1.12); }
+
+        .theme-switch__option:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .theme-switch__option[aria-checked="true"] {
+            color: var(--btn-hover-text);
+            background: var(--btn-hover-bg);
+            box-shadow: var(--btn-hover-glow);
+        }
+
+        .theme-switch__option[aria-checked="true"] .rune {
+            transform: scale(1.1);
+        }
+
+        /* Hide the word on narrow rails, keep the rune */
+        .theme-switch__label { display: inline; }
+
+        /* ---------- Messages ---------- */
         .messages {
             flex: 1;
             overflow-y: auto;
             padding: 30px;
-            background: #000;
+            background: transparent;
             max-width: 1200px;
             margin: 0 auto;
             width: 100%;
         }
 
         .message {
-            margin-bottom: 20px;
-            padding: 15px;
-            border-radius: 0;
-            animation: fadeIn 0.3s;
-            line-height: 1.6;
-            max-width: 70%;
+            margin-bottom: 22px;
+            padding: 16px 20px;
+            border-radius: 4px;
+            animation: apparate 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+            line-height: 1.7;
+            max-width: 72%;
+            font-size: 1.03rem;
+            position: relative;
+            backdrop-filter: blur(2px);
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* Apparition: fade + shimmer in */
+        @keyframes apparate {
+            from { opacity: 0; transform: translateY(12px) scale(0.985); filter: blur(3px); }
+            to   { opacity: 1; transform: translateY(0)    scale(1);     filter: blur(0); }
         }
 
+        /* The witch/wizard asking — Ravenclaw blue & bronze */
         .message.user {
-            background: transparent;
-            border-left: 2px solid #ffffff;
-            color: #ffffff;
+            background: var(--user-bg);
+            border: 1px solid var(--user-border);
+            border-left: 3px solid var(--bronze);
+            color: var(--user-text);
             margin-left: auto;
             margin-right: 0;
+            box-shadow: var(--shadow-md), var(--user-inner);
         }
 
+        /* The Oracle answering — parchment scroll */
         .message.assistant {
-            background: transparent;
-            border-left: 2px solid #00cc00;
-            color: #00cc00;
+            background: var(--assistant-bg);
+            border: 1px solid var(--accent-faint);
+            border-left: 3px solid var(--accent);
+            color: var(--text);
             margin-left: 0;
             margin-right: auto;
+            box-shadow: var(--shadow-md), var(--assistant-inner);
         }
 
+        /* A curse has struck — Gryffindor scarlet */
         .message.error {
-            background: transparent;
-            border-left: 2px solid #cc0000;
-            color: #cc0000;
+            background: var(--error-bg);
+            border: 1px solid var(--error-border);
+            border-left: 3px solid var(--gryffindor);
+            color: var(--error-text);
+            box-shadow: var(--shadow-md), var(--error-inner);
         }
 
         .message pre {
-            background: transparent;
-            padding: 10px;
-            border-radius: 0;
+            background: var(--code-bg);
+            padding: 12px 14px;
+            border-radius: 3px;
             overflow-x: auto;
-            margin: 10px 0;
-            border: 1px solid #00cc00;
+            margin: 12px 0;
+            border: 1px solid var(--accent-faint);
+            border-left: 2px solid var(--accent);
+            font-family: 'Courier New', monospace;
+            font-size: 0.88rem;
+            color: var(--code-text);
         }
 
         .message img {
             max-width: 100%;
-            border-radius: 0;
-            margin: 10px 0;
-            border: 1px solid #00cc00;
+            border-radius: 3px;
+            margin: 12px 0;
+            border: 1px solid var(--accent);
+            padding: 6px;
+            background: var(--surface-raised);
+            box-shadow: var(--shadow-lg);
         }
 
+        /* ---------- Spell badges (agents) ---------- */
         .agent-badge {
             display: inline-block;
-            padding: 3px 8px;
-            background: transparent;
-            color: #00ff00;
-            border: 1px solid #00ff00;
-            border-radius: 0;
-            font-size: 0.75em;
-            margin-right: 5px;
+            padding: 4px 12px;
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            border: 1px solid var(--accent);
+            border-radius: 999px;
+            font-family: 'Cinzel', serif;
+            font-size: 0.7rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin: 0 6px 6px 0;
+            box-shadow: 0 0 10px var(--accent-wash);
         }
 
+        .spell-scroll {
+            margin: 12px 0;
+            padding: 12px 16px;
+            border-left: 3px solid var(--accent);
+            background: linear-gradient(90deg, var(--accent-wash), transparent);
+            border-radius: 3px;
+        }
+
+        .spell-scroll strong {
+            font-family: 'Cinzel', serif;
+            color: var(--accent-bright);
+            letter-spacing: 0.06em;
+        }
+
+        /* ---------- Input: the Great Hall lectern ---------- */
         .input-section {
-            border-top: 1px solid #00cc00;
-            padding: 20px;
-            background: #000;
+            border-top: 1px solid var(--accent-faint);
+            padding: 18px 20px 22px;
+            background: linear-gradient(180deg, var(--accent-wash-lo), var(--surface));
             max-width: 1200px;
             margin: 0 auto;
             width: 100%;
+            position: relative;
+        }
+
+        .input-section::before {
+            content: '';
+            position: absolute;
+            top: -1px; left: 50%;
+            transform: translateX(-50%);
+            width: 280px; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            box-shadow: 0 0 12px var(--accent-halo);
         }
 
         .file-upload-bar {
             display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
+            gap: 12px;
+            margin-bottom: 12px;
             align-items: center;
         }
 
@@ -136,212 +659,499 @@
             left: -9999px;
         }
 
-        .file-input-label {
-            display: inline-block;
-            padding: 8px 15px;
-            background: #000;
-            color: #00cc00;
-            border: 1px solid #00cc00;
-            border-radius: 0;
+        /* Shared enchanted-button look */
+        .file-input-label,
+        .agents-btn,
+        .input-area button {
+            font-family: 'Cinzel', serif;
+            letter-spacing: 0.10em;
+            text-transform: uppercase;
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            border: 1px solid var(--accent);
+            border-radius: 3px;
             cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.9em;
+            transition: all 0.28s ease;
+            position: relative;
+            overflow: hidden;
         }
 
-        .file-input-label:hover {
-            background: #00cc00;
-            color: #000;
-        }
-
+        .file-input-label,
         .agents-btn {
-            padding: 8px 15px;
-            background: #000;
-            color: #00cc00;
-            border: 1px solid #00cc00;
-            border-radius: 0;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.9em;
-            font-family: 'Courier New', monospace;
+            display: inline-block;
+            padding: 9px 16px;
+            font-size: 0.76rem;
         }
 
-        .agents-btn:hover {
-            background: #00cc00;
-            color: #000;
+        .file-input-label:hover,
+        .agents-btn:hover,
+        .input-area button:hover:not(:disabled) {
+            background: var(--btn-hover-bg);
+            color: var(--btn-hover-text);
+            box-shadow: var(--btn-hover-glow);
+            text-shadow: none;
         }
 
         .file-name {
             flex: 1;
-            padding: 8px;
-            background: transparent;
-            border: 1px solid #00cc00;
-            border-radius: 0;
-            font-size: 0.85em;
-            color: #00cc00;
+            padding: 9px 14px;
+            background: var(--surface-raised);
+            border: 1px dashed var(--accent-faint);
+            border-radius: 3px;
+            font-size: 0.9rem;
+            font-style: italic;
+            color: var(--accent-bright);
         }
 
         .input-area {
             display: flex;
-            gap: 10px;
+            gap: 12px;
         }
 
         .input-area input {
             flex: 1;
-            padding: 12px;
-            background: #000;
-            border: 1px solid #00cc00;
-            border-radius: 0;
-            font-size: 1em;
-            color: #00cc00;
-            font-family: 'Courier New', monospace;
+            padding: 14px 18px;
+            background: var(--surface-sunk);
+            border: 1px solid var(--accent-faint);
+            border-radius: 3px;
+            font-size: 1.05rem;
+            color: var(--text);
+            font-family: 'EB Garamond', Georgia, serif;
+            transition: all 0.28s ease;
+        }
+
+        .input-area input::placeholder {
+            color: var(--text-muted);
+            font-style: italic;
         }
 
         .input-area input:focus {
             outline: none;
-            border-color: #00ff00;
-            box-shadow: none;
+            border-color: var(--accent);
+            background: var(--surface-sunk-hi);
+            box-shadow: 0 0 20px var(--accent-halo), inset 0 0 18px var(--accent-wash-lo);
         }
 
         .input-area button {
-            padding: 12px 25px;
-            background: #000;
-            color: #00cc00;
-            border: 1px solid #00cc00;
-            border-radius: 0;
-            font-size: 1em;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-family: 'Courier New', monospace;
-        }
-
-        .input-area button:hover {
-            background: #00cc00;
-            color: #000;
+            padding: 14px 30px;
+            font-size: 0.82rem;
+            min-width: 170px;
         }
 
         .input-area button:disabled {
-            background: #000;
-            border-color: #003300;
-            color: #003300;
+            background: var(--btn-off-bg);
+            border-color: var(--btn-off-border);
+            color: var(--btn-off-text);
             cursor: not-allowed;
+            box-shadow: none;
         }
 
+        /* ---------- The Golden Snitch loader ---------- */
         .loading {
             display: inline-block;
+            position: relative;
             width: 16px;
             height: 16px;
-            border: 2px solid #003300;
-            border-top: 2px solid #00cc00;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            background: radial-gradient(circle at 35% 30%, #ffe9a8, var(--hufflepuff) 60%, #8a6a12 100%);
+            box-shadow: 0 0 14px rgba(240, 199, 94, 0.85);
+            animation: snitch 1.4s ease-in-out infinite;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .loading::before,
+        .loading::after { /* snitch wings */
+            content: '';
+            position: absolute;
+            top: 3px;
+            width: 14px;
+            height: 10px;
+            border: 1px solid rgba(255, 240, 200, 0.85);
+            border-radius: 80% 10% 80% 10%;
+            background: rgba(255, 240, 200, 0.18);
         }
+        .loading::before { left: -15px; animation: flap-l 0.28s ease-in-out infinite alternate; }
+        .loading::after  { right: -15px; animation: flap-r 0.28s ease-in-out infinite alternate; }
 
+        @keyframes flap-l { from { transform: rotate(-18deg) scaleY(0.55); } to { transform: rotate(14deg) scaleY(1); } }
+        @keyframes flap-r { from { transform: rotate(18deg)  scaleY(0.55); } to { transform: rotate(-14deg) scaleY(1); } }
+        @keyframes snitch { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+        /* ---------- Markdown / parchment typography ---------- */
         .markdown-content {
-            line-height: 1.6;
+            line-height: 1.75;
         }
 
         .markdown-content h1,
         .markdown-content h2,
         .markdown-content h3,
         .markdown-content h4 {
-            margin-top: 15px;
+            margin-top: 18px;
             margin-bottom: 10px;
-            color: #00cc00;
-            font-weight: normal;
+            font-family: 'Cinzel', serif;
+            color: var(--accent-bright);
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-shadow: var(--heading-shadow);
         }
+
+        .markdown-content h4 { font-size: 1.05rem; }
 
         .markdown-content ul,
         .markdown-content ol {
-            margin-left: 20px;
-            margin-bottom: 10px;
+            margin-left: 24px;
+            margin-bottom: 12px;
         }
 
+        .markdown-content li::marker { color: var(--accent); }
+
+        .markdown-content a { color: var(--accent-bright); }
+
+        .markdown-content strong { color: var(--accent-bright); }
+
         .markdown-content code {
-            background: transparent;
-            padding: 2px 6px;
-            border-radius: 0;
+            background: var(--code-bg);
+            padding: 2px 7px;
+            border-radius: 3px;
             font-family: 'Courier New', monospace;
-            border: 1px solid #00cc00;
+            font-size: 0.88em;
+            border: 1px solid var(--accent-faint);
+            color: var(--code-inline);
         }
 
         .markdown-content pre {
-            background: transparent;
-            padding: 10px;
-            border-radius: 0;
+            background: var(--code-bg);
+            padding: 12px 14px;
+            border-radius: 3px;
             overflow-x: auto;
-            border: 1px solid #00cc00;
+            border: 1px solid var(--accent-faint);
+            border-left: 2px solid var(--accent);
+            color: var(--code-text);
         }
+
+        .markdown-content pre code { border: none; background: transparent; padding: 0; }
 
         .markdown-content blockquote {
-            border-left: 2px solid #00cc00;
-            padding-left: 15px;
-            margin: 10px 0;
-            opacity: 0.8;
+            border-left: 3px solid var(--accent);
+            padding-left: 16px;
+            margin: 12px 0;
+            font-family: 'IM Fell English', serif;
+            font-style: italic;
+            color: var(--text-dim);
         }
 
+        .markdown-content table {
+            border-collapse: collapse;
+            margin: 12px 0;
+            width: 100%;
+        }
+
+        .markdown-content th,
+        .markdown-content td {
+            border: 1px solid var(--accent-faint);
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        .markdown-content th {
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent-bright);
+            background: var(--accent-wash);
+        }
+
+        /* Drop cap on the opening incantation */
+        .incantation::first-letter {
+            font-family: 'Cinzel Decorative', serif;
+            font-size: 2.6rem;
+            line-height: 1;
+            float: left;
+            padding: 4px 10px 0 0;
+            color: var(--accent);
+            text-shadow: var(--heading-shadow);
+        }
+
+        /* ---------- Scrollbar: a golden wand ---------- */
         ::-webkit-scrollbar {
             width: 10px;
         }
 
         ::-webkit-scrollbar-track {
-            background: #000;
+            background: var(--scroll-track);
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #00cc00;
-            border-radius: 5px;
+            background: linear-gradient(180deg, var(--accent-bright), var(--accent-deep));
+            border-radius: 6px;
+            border: 1px solid var(--scroll-track);
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: #00ff00;
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent-halo);
+        }
+
+        ::selection {
+            background: var(--selection-bg);
+            color: var(--selection-text);
+        }
+
+        @media (max-width: 900px) {
+            .theme-switch__label { display: none; }
+            .theme-switch__option { padding: 6px 9px; }
+        }
+
+        @media (max-width: 720px) {
+            .message { max-width: 92%; }
+            .hall-title { font-size: 1.2rem; }
+            .input-area button { min-width: 110px; padding: 14px 16px; }
+            .candles { display: none; }
+            .theme-switch {
+                position: static;
+                margin: 0 auto 10px;
+                display: inline-flex;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.001ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.001ms !important;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="starfield" aria-hidden="true"></div>
+    <div class="sunbeams" aria-hidden="true"></div>
+    <div class="candles" id="candles" aria-hidden="true"></div>
+
     <div class="container">
         <div class="chat-container">
+
+            <header class="hall-header">
+                <div
+                    class="theme-switch"
+                    id="themeSwitch"
+                    role="radiogroup"
+                    aria-label="Colour theme"
+                >
+                    <button type="button" class="theme-switch__option" role="radio" data-theme-value="light"  aria-checked="false" title="Light — Lumos">
+                        <span class="rune" aria-hidden="true">☀</span><span class="theme-switch__label">Lumos</span>
+                    </button>
+                    <button type="button" class="theme-switch__option" role="radio" data-theme-value="dark"   aria-checked="false" title="Dark — Nox">
+                        <span class="rune" aria-hidden="true">☾</span><span class="theme-switch__label">Nox</span>
+                    </button>
+                    <button type="button" class="theme-switch__option" role="radio" data-theme-value="system" aria-checked="true"  title="System — follow your device">
+                        <span class="rune" aria-hidden="true">◐</span><span class="theme-switch__label">Auto</span>
+                    </button>
+                </div>
+
+                <div class="crest">⚡🦁🐍🦅🦡</div>
+                <div class="hall-title">The Pensieve</div>
+                <div class="hall-motto">Hogwarts Bureau of Magical Data &mdash; <em>Draco dormiens nunquam titillandus</em></div>
+                <div class="house-ribbon">
+                    <span class="g"></span><span class="s"></span><span class="r"></span><span class="h"></span>
+                </div>
+            </header>
+
             <div id="messages" class="messages"></div>
-            
+
             <div class="input-section">
                 <div class="file-upload-bar">
                     <div class="file-input-wrapper">
                         <input type="file" id="fileInput" accept=".csv">
-                        <label for="fileInput" class="file-input-label">📁 Upload CSV</label>
+                        <label for="fileInput" class="file-input-label">📜 Submit a Scroll (CSV)</label>
                     </div>
-                    <button onclick="showAgents()" class="agents-btn">🤖 Agents</button>
+                    <button onclick="showAgents()" class="agents-btn">🧙 The Order of Agents</button>
                     <div id="fileName" class="file-name" style="display: none;"></div>
                 </div>
-                
+
                 <div class="input-area">
-                    <input 
-                        type="text" 
-                        id="messageInput" 
-                        placeholder=">> Enter your query..."
+                    <input
+                        type="text"
+                        id="messageInput"
+                        placeholder="Speak your incantation, and the Pensieve shall answer…"
                         onkeypress="handleKeyPress(event)"
                     >
-                    <button onclick="sendMessage()" id="sendBtn">SEND</button>
+                    <button onclick="sendMessage()" id="sendBtn">✨ Cast Spell</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Polite announcements for screen readers (theme changes, etc.) -->
+    <div id="srAnnouncer" role="status" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;"></div>
+
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    
+
     <script>
         const API_BASE = 'http://localhost:8000';
         let sessionId = null;
         let uploadedFile = null;
 
+        const SEND_LABEL = '✨ Cast Spell';
+
+        /* =====================================================================
+           THEME CONTROLLER — Light / Dark / System
+           ---------------------------------------------------------------------
+           `data-theme-pref` on <html> holds what the user CHOSE.
+           `data-theme`      on <html> holds what is actually RENDERED.
+           When the preference is "system", the rendered theme tracks the OS and
+           updates live if the OS flips while the page is open.
+           ===================================================================== */
+        const Theme = (function () {
+            const STORAGE_KEY = 'pensieve-theme';
+            const MODES = ['light', 'dark', 'system'];
+            const root = document.documentElement;
+            const media = window.matchMedia('(prefers-color-scheme: light)');
+
+            const LABELS = {
+                light:  'Lumos — light parchment',
+                dark:   'Nox — midnight hall',
+                system: 'Auto — following your device'
+            };
+
+            function readPref() {
+                try {
+                    const saved = localStorage.getItem(STORAGE_KEY);
+                    if (MODES.includes(saved)) return saved;
+                } catch (e) { /* storage unavailable */ }
+                return 'system';
+            }
+
+            function savePref(pref) {
+                try { localStorage.setItem(STORAGE_KEY, pref); }
+                catch (e) { /* storage unavailable — session-only theme */ }
+            }
+
+            function resolve(pref) {
+                if (pref === 'system') return media.matches ? 'light' : 'dark';
+                return pref;
+            }
+
+            function paint(pref) {
+                const resolved = resolve(pref);
+                root.setAttribute('data-theme-pref', pref);
+                root.setAttribute('data-theme', resolved);
+                root.style.colorScheme = resolved;
+                syncButtons(pref);
+                return resolved;
+            }
+
+            function syncButtons(pref) {
+                document.querySelectorAll('.theme-switch__option').forEach(btn => {
+                    const isOn = btn.dataset.themeValue === pref;
+                    btn.setAttribute('aria-checked', isOn ? 'true' : 'false');
+                    btn.tabIndex = isOn ? 0 : -1;
+                });
+            }
+
+            function announce(pref) {
+                const el = document.getElementById('srAnnouncer');
+                if (!el) return;
+                const resolved = resolve(pref);
+                el.textContent = 'Theme set to ' + LABELS[pref] +
+                    (pref === 'system' ? ' (currently ' + resolved + ')' : '') + '.';
+            }
+
+            function set(pref, opts) {
+                if (!MODES.includes(pref)) pref = 'system';
+                savePref(pref);
+                paint(pref);
+                if (!opts || opts.announce !== false) announce(pref);
+            }
+
+            function current() {
+                return root.getAttribute('data-theme-pref') || 'system';
+            }
+
+            /* Cycle Light → Dark → System → Light (keyboard shortcut) */
+            function cycle() {
+                const i = MODES.indexOf(current());
+                set(MODES[(i + 1) % MODES.length]);
+            }
+
+            function init() {
+                const pref = readPref();
+                paint(pref);
+
+                const group = document.getElementById('themeSwitch');
+                if (group) {
+                    group.addEventListener('click', e => {
+                        const btn = e.target.closest('[data-theme-value]');
+                        if (btn) set(btn.dataset.themeValue);
+                    });
+
+                    /* Arrow-key navigation inside the radiogroup */
+                    group.addEventListener('keydown', e => {
+                        const keys = ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'];
+                        if (!keys.includes(e.key)) return;
+                        e.preventDefault();
+                        const btns = Array.from(group.querySelectorAll('[data-theme-value]'));
+                        const from = btns.findIndex(b => b.getAttribute('aria-checked') === 'true');
+                        let next;
+                        if (e.key === 'Home') next = 0;
+                        else if (e.key === 'End') next = btns.length - 1;
+                        else {
+                            const step = (e.key === 'ArrowRight' || e.key === 'ArrowDown') ? 1 : -1;
+                            next = (from + step + btns.length) % btns.length;
+                        }
+                        set(btns[next].dataset.themeValue);
+                        btns[next].focus();
+                    });
+                }
+
+                /* Follow the OS live — only meaningful while the pref is "system" */
+                const onSystemChange = () => {
+                    if (current() === 'system') paint('system');
+                };
+                if (media.addEventListener) media.addEventListener('change', onSystemChange);
+                else if (media.addListener) media.addListener(onSystemChange); // older Safari
+
+                /* Shift + T cycles the three modes */
+                document.addEventListener('keydown', e => {
+                    const tag = (e.target.tagName || '').toLowerCase();
+                    if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
+                    if (e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === 't') {
+                        e.preventDefault();
+                        cycle();
+                    }
+                });
+            }
+
+            return { init, set, cycle, current, resolve: () => resolve(current()) };
+        })();
+
+        Theme.init();
+
+        /* Light the floating candles of the Great Hall */
+        (function lightCandles() {
+            const hall = document.getElementById('candles');
+            const spots = [
+                [6, 14], [14, 46], [22, 22], [31, 68], [42, 10],
+                [58, 34], [69, 74], [77, 18], [86, 52], [94, 30]
+            ];
+            spots.forEach(([left, top], i) => {
+                const c = document.createElement('div');
+                c.className = 'candle';
+                c.style.left = left + '%';
+                c.style.top = top + '%';
+                c.style.height = (18 + (i % 4) * 6) + 'px';
+                c.style.animationDelay = (i * 0.7) + 's';
+                c.style.animationDuration = (7 + (i % 5)) + 's';
+                c.style.opacity = 0.35 + (i % 3) * 0.2;
+                hall.appendChild(c);
+            });
+        })();
+
         document.getElementById('fileInput').addEventListener('change', async function(e) {
             const file = e.target.files[0];
             if (file) {
                 uploadedFile = file;
-                document.getElementById('fileName').textContent = `✓ ${file.name}`;
+                document.getElementById('fileName').textContent = `🪶 Scroll received — ${file.name}`;
                 document.getElementById('fileName').style.display = 'block';
                 await uploadFile(file);
             }
@@ -350,45 +1160,45 @@
         async function uploadFile(file) {
             const formData = new FormData();
             formData.append('file', file);
-            
-            addMessage('user', `Uploading ${file.name}...`);
-            
+
+            addMessage('user', `Delivering the scroll <em>${file.name}</em> to the Pensieve…`);
+
             try {
                 const response = await fetch(`${API_BASE}/upload`, {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const result = await response.json();
                 sessionId = result.session_id;
-                
-                addMessage('assistant', `✓ File uploaded successfully! You can now ask questions about your data.`);
+
+                addMessage('assistant', `🪄 <strong>Alohomora!</strong> The scroll has been unsealed and its secrets laid bare. Ask what you will of the data.`);
             } catch (error) {
-                addMessage('error', `✗ Error uploading file: ${error.message}`);
+                addMessage('error', `🧹 <strong>The scroll resisted the charm.</strong> ${error.message}`);
             }
         }
 
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const message = input.value.trim();
-            
+
             if (!message) return;
-            
+
             input.value = '';
             addMessage('user', message);
-            
+
             const sendBtn = document.getElementById('sendBtn');
             sendBtn.disabled = true;
             sendBtn.innerHTML = '<span class="loading"></span>';
-            
+
             try {
                 let response;
-                
+
                 if (uploadedFile && !sessionId) {
                     const formData = new FormData();
                     formData.append('file', uploadedFile);
                     formData.append('message', message);
-                    
+
                     response = await fetch(`${API_BASE}/upload`, {
                         method: 'POST',
                         body: formData
@@ -405,43 +1215,43 @@
                         })
                     });
                 }
-                
+
                 const result = await response.json();
                 sessionId = result.session_id;
-                
+
                 displayResult(result.response || result);
-                
+
             } catch (error) {
-                addMessage('error', `✗ Error: ${error.message}`);
+                addMessage('error', `🧹 <strong>The spell fizzled.</strong> ${error.message}`);
             } finally {
                 sendBtn.disabled = false;
-                sendBtn.innerHTML = 'SEND';
+                sendBtn.innerHTML = SEND_LABEL;
             }
         }
 
         function displayResult(result) {
             if (!result.success) {
-                addMessage('error', result.error || 'An error occurred');
+                addMessage('error', `🐍 <strong>Confringo!</strong> ${result.error || 'An unknown enchantment went awry.'}`);
                 return;
             }
-            
+
             let content = '';
-            
+
             if (result.execution_flow) {
-                content += `<div style="margin-bottom: 10px;">`;
+                content += `<div style="margin-bottom: 12px;">`;
                 result.execution_flow.forEach(step => {
                     content += `<span class="agent-badge">${step.agent}</span>`;
                 });
                 content += `</div>`;
             }
-            
+
             if (result.agent_results) {
                 for (const [agentName, agentResult] of Object.entries(result.agent_results)) {
                     if (agentResult.data) {
                         if (agentName === 'AnswerSynthesiser') {
-                            content += `<h4>💡 Answer</h4>`;
+                            content += `<h4>🔮 The Oracle Speaks</h4>`;
                             const answerData = agentResult.data;
-                            
+
                             if (typeof answerData === 'string') {
                                 content += `<div class="markdown-content">${marked.parse(answerData)}</div>`;
                             } else if (answerData.answer || answerData.formatted_answer) {
@@ -449,7 +1259,7 @@
                                 content += `<div class="markdown-content">${marked.parse(answerText)}</div>`;
                             }
                         }
-                        
+
                         if (agentName === 'CodeInterpreter' && agentResult.data.analysis) {
                             if (agentResult.data.results) {
                                 for (const execResult of agentResult.data.results) {
@@ -459,19 +1269,19 @@
                                 }
                             }
                         }
-                        
+
                         if (agentName === 'VisualizationAgent' && agentResult.data.visualizations) {
-                            content += `<h4>📈 Visualizations</h4>`;
+                            content += `<h4>🖼️ Moving Portraits</h4>`;
                             for (const viz of agentResult.data.visualizations) {
                                 if (viz.image_base64) {
-                                    content += `<img src="data:image/png;base64,${viz.image_base64}" alt="Visualization">`;
+                                    content += `<img src="data:image/png;base64,${viz.image_base64}" alt="Enchanted visualisation">`;
                                 }
                             }
                         }
                     }
                 }
             }
-            
+
             addMessage('assistant', content);
         }
 
@@ -494,26 +1304,34 @@
             try {
                 const response = await fetch(`${API_BASE}/agents`);
                 const agents = await response.json();
-                
-                let agentsInfo = '<h4>🤖 Available Agents</h4>';
+
+                let agentsInfo = '<h4>🧙 The Order of Agents</h4>';
                 agents.forEach(agent => {
-                    agentsInfo += `<div style="margin: 10px 0; padding: 10px; background: transparent; border-left: 2px solid #00cc00;">`;
+                    agentsInfo += `<div class="spell-scroll">`;
                     agentsInfo += `<strong>${agent.name}</strong><br>`;
-                    agentsInfo += `<ul style="margin-top: 5px; font-size: 0.9em;">`;
+                    agentsInfo += `<ul style="margin-top: 6px; font-size: 0.92em;">`;
                     agent.capabilities.forEach(cap => {
                         agentsInfo += `<li>${cap}</li>`;
                     });
                     agentsInfo += `</ul></div>`;
                 });
-                
-                addMessage('assistant', agentsInfo);
+
+                addMessage('assistant', `<div class="markdown-content">${agentsInfo}</div>`);
             } catch (error) {
-                addMessage('error', `✗ Error loading agents: ${error.message}`);
+                addMessage('error', `🧹 <strong>The Order could not be summoned.</strong> ${error.message}`);
             }
         }
 
-        addMessage('assistant', '>> System ready. Upload CSV file or enter query...');
+        addMessage('assistant',
+            `<div class="markdown-content incantation">` +
+            `Welcome, witch or wizard, to <strong>The Pensieve</strong> — where tangled data is drawn from the mind ` +
+            `and swirled into silver clarity.` +
+            `<blockquote>“It does not do to dwell on dreams and forget to live… nor to dwell on spreadsheets and forget to ask questions.”</blockquote>` +
+            `Submit a scroll of parchment (<code>.csv</code>) below, or simply speak your incantation. ` +
+            `<em>Mischief managed.</em>` +
+            `<br><br><small>Cast <strong>Lumos</strong>, <strong>Nox</strong> or <strong>Auto</strong> from the dial above to change the light — or press <code>Shift + T</code>.</small>` +
+            `</div>`
+        );
     </script>
 </body>
 </html>
-
