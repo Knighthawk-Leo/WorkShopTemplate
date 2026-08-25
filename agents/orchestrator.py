@@ -161,6 +161,132 @@ class AgentOrchestrator:
 
         return await self.process_query(message, files, start_agent, session_id)
 
+    async def edit_csv(
+        self,
+        file_path: str,
+        edit_instructions: str,
+        output_path: Optional[str] = None,
+        conversation_context: Optional[Dict[str, Any]] = None,
+        session_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Edit a CSV file based on instructions"""
+        from pathlib import Path
+        
+        file_path_obj = Path(file_path)
+        if not file_path_obj.exists():
+            return {
+                "success": False,
+                "error": f"File not found: {file_path}",
+                "agent_results": {},
+            }
+        
+        if not file_path_obj.suffix.lower() == ".csv":
+            return {
+                "success": False,
+                "error": "File must be a CSV file",
+                "agent_results": {},
+            }
+        
+        # If no output path specified, use the input path (will overwrite)
+        if output_path is None:
+            output_path = str(file_path_obj)
+        
+        # Build edit query that includes saving the file
+        edit_query = f"""Edit the CSV file at '{file_path}' according to these instructions: {edit_instructions}
+
+IMPORTANT: After making the edits, save the modified DataFrame to '{output_path}' using df.to_csv('{output_path}', index=False)."""
+        
+        # Update context with edit-specific information
+        edit_context = conversation_context.copy() if conversation_context else {}
+        edit_context["edit_mode"] = True
+        edit_context["input_file"] = file_path
+        edit_context["output_file"] = output_path
+        
+        # Process with CodeInterpreter agent directly
+        input_data = {
+            "query": edit_query,
+            "context": edit_context,
+            "files": {file_path_obj.name: str(file_path_obj)},
+            "session_id": session_id or "default",
+        }
+        
+        # Use CodeInterpreter agent for CSV editing
+        code_interpreter = self.get_agent("CodeInterpreter")
+        if not code_interpreter:
+            return {
+                "success": False,
+                "error": "CodeInterpreter agent not found",
+                "agent_results": {},
+            }
+        
+        try:
+            agent_result = await code_interpreter.process(input_data)
+            
+            # Check if the file was actually saved
+            output_path_obj = Path(output_path)
+            file_exists = output_path_obj.exists()
+            
+            # Also check execution results for file_saved flag
+            file_saved_from_code = False
+            if agent_result.data and isinstance(agent_result.data, dict):
+                # Check execution results
+                if "results" in agent_result.data:
+                    for exec_result in agent_result.data.get("results", []):
+                        if isinstance(exec_result, dict) and exec_result.get("file_saved"):
+                            file_saved_from_code = True
+                            break
+                # Also check if saved_files is in the data
+                if agent_result.data.get("saved_files") or agent_result.data.get("file_saved"):
+                    file_saved_from_code = True
+            
+            file_saved = file_exists or file_saved_from_code
+            
+            results = {
+                "query": edit_query,
+                "execution_flow": [{"agent": "CodeInterpreter", "timestamp": datetime.now().isoformat()}],
+                "agent_results": {
+                    "CodeInterpreter": {
+                        "success": agent_result.success and file_saved,
+                        "message": agent_result.message,
+                        "data": {
+                            **agent_result.data,
+                            "edited_file_path": output_path if file_saved else None,
+                            "file_saved": file_saved,
+                        },
+                        "metadata": agent_result.metadata,
+                    }
+                },
+                "final_result": {
+                    "edited_file_path": output_path if file_saved else None,
+                    "file_saved": file_saved,
+                },
+                "success": agent_result.success and file_saved,
+                "error": None if (agent_result.success and file_saved) else (
+                    agent_result.message if not agent_result.success else "File was not saved"
+                ),
+            }
+            
+            # Add to execution history
+            self.execution_history.append(
+                {
+                    "timestamp": datetime.now().isoformat(),
+                    "duration": 0,  # Could track this if needed
+                    "query": edit_query,
+                    "success": results["success"],
+                    "agents_used": ["CodeInterpreter"],
+                    "action": "edit_csv",
+                }
+            )
+            
+            return results
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "agent_results": {},
+            }
+
     def _determine_start_agent(
         self, message: str, files: Optional[Dict[str, str]]
     ) -> str:

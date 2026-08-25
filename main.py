@@ -30,7 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_API_KEY = ''
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY environment variable not set")
 
@@ -60,6 +60,12 @@ class ChatResponse(BaseModel):
 class AgentInfo(BaseModel):
     name: str
     capabilities: List[str]
+
+class EditCsvRequest(BaseModel):
+    session_id: str
+    filename: str
+    edit_instructions: str
+    save_as_new: Optional[bool] = False
 
 
 @app.get("/")
@@ -234,5 +240,108 @@ async def get_history():
 
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8001)
+
+
+
+@app.post("/edit-csv")
+async def edit_csv_file(request: EditCsvRequest):
+    """Edit an existing CSV file in a session"""
+    try:
+        # Validate session exists
+        if request.session_id not in sessions:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        session = sessions[request.session_id]
+        
+        # Check if uploaded_files exists in session
+        if "uploaded_files" not in session:
+            raise HTTPException(status_code=400, detail="No files uploaded in this session")
+        
+        # Find the file
+        if request.filename not in session["uploaded_files"]:
+            raise HTTPException(status_code=404, detail=f"File '{request.filename}' not found in session")
+        
+        original_file_path = Path(session["uploaded_files"][request.filename])
+        
+        # Verify file exists on disk
+        if not original_file_path.exists():
+            raise HTTPException(status_code=404, detail="File not found on disk")
+        
+        # Verify it's a CSV file
+        if not original_file_path.suffix.lower() == ".csv":
+            raise HTTPException(status_code=400, detail="File must be a CSV file")
+        
+        # Prepare edit message for orchestrator
+        edit_message = f"Edit the CSV file according to these instructions: {request.edit_instructions}"
+        
+        # If saving as new file, create a new file path
+        if request.save_as_new:
+            file_id = str(uuid.uuid4())
+            edited_file_path = UPLOAD_DIR / f"{file_id}_edited_{request.filename}"
+        else:
+            # Create backup of original file
+            backup_path = original_file_path.with_suffix('.csv.backup')
+            shutil.copy2(original_file_path, backup_path)
+            edited_file_path = original_file_path
+        
+        # Use orchestrator to perform the edit
+                # Use orchestrator to perform the edit
+        results = await orchestrator.edit_csv(
+            file_path=str(original_file_path),
+            edit_instructions=request.edit_instructions,
+            output_path=str(edited_file_path),
+            conversation_context=session["context"],
+            session_id=request.session_id,
+        )
+        
+        # Check if edit was successful
+        if not results["success"]:
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Edit failed: {results.get('error', 'Unknown error')}"
+            )
+        
+        # If the orchestrator created/modified the file, update session
+        # Note: This assumes the orchestrator/agent handles file writing
+        # You may need to adjust this based on how your agents work
+        
+        # Update session context with edit results
+        if results.get("agent_results"):
+            for agent_name, agent_result in results["agent_results"].items():
+                session["context"][f"{agent_name.lower()}_data"] = agent_result["data"]
+        
+        # Update file path in session if saving as new
+        if request.save_as_new:
+            session["uploaded_files"][f"edited_{request.filename}"] = str(edited_file_path)
+        
+        # Add to history
+        session["history"].append(
+            {
+                "timestamp": datetime.now().isoformat(),
+                "action": "edit_csv",
+                "filename": request.filename,
+                "edit_instructions": request.edit_instructions,
+                "results": results,
+            }
+        )
+        
+        return {
+            "success": True,
+            "session_id": request.session_id,
+            "filename": request.filename,
+            "edited_filename": f"edited_{request.filename}" if request.save_as_new else request.filename,
+            "file_path": str(edited_file_path),
+            "response": results,
+            "timestamp": datetime.now().isoformat(),
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
