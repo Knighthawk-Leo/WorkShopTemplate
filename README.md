@@ -38,6 +38,20 @@ The API will be available at `http://localhost:8000`
 
 Open `green.html` in your browser to interact with the system.
 
+#### Choosing a theme
+
+The UI ships with three display modes, selectable from the dial in the top-right of the header:
+
+| Mode | Rune | Behaviour |
+|------|------|-----------|
+| **Lumos** | ☀ | Light — sunlit parchment |
+| **Nox** | ☾ | Dark — the Great Hall at midnight |
+| **Auto** | ◐ | Follows your operating system, and switches live if the OS setting changes |
+
+Your choice is saved to `localStorage` (key `pensieve-theme`) and applied before first paint, so
+there is no flash of the wrong theme on reload. **Auto** is the default. You can also press
+`Shift + T` to cycle through the three modes.
+
 ## 📁 Project Structure
 
 ```
